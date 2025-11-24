@@ -15,22 +15,28 @@ const Input = ({sendMsg}: Props) => {
     const dispatch = useAppDispatch()
     // 发送消息
     const sendMessage = () => {
-        if(isPending) return
-        sendMsg(deferMessage)
+        if(isPending || message.trim().length === 0) return
+        sendMsg(message)
         setMessage("")
         dispatch(toggleIsPending(true))
     }
 
-    const onKeyUpSendMessage = (e:any) => {
-        if(e.key === 'Enter') {
+    const onKeyUpSendMessage = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
             sendMessage()
         }
     }
 
     return (
-        <div className={styles.input} onKeyUp={onKeyUpSendMessage}>
+        <div className={styles.input}>
             <div className={styles.content}>
-                <textarea className={styles.textarea} value={message} onChange={e => setMessage(e.target.value)}></textarea>
+                <textarea
+                    className={styles.textarea}
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
+                    onKeyDown={onKeyUpSendMessage}
+                    ></textarea>
             </div>
             <footer className={styles.footer}>
                 <div className={styles.left}>
