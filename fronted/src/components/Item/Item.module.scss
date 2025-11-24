@@ -1,0 +1,30 @@
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-height: 40px;
+    border-radius: 10px;
+    padding: 0 10px;
+    transition: all 0.2s;
+    cursor: pointer;
+    gap:5px;
+    .more {
+        border-radius: 50%;
+        background-color: #adadad;
+        color: #949494;
+        opacity: 0;
+        height: 20px;
+        width: 20px;
+    }
+    &:hover {
+        background-color: #c5c5c5;
+        .more {
+            opacity: 1;
+            &:hover {
+                background-color: #7e7e7e;
+                color: #636363;
+            }
+        }
+    }
+}

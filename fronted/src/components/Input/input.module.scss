@@ -1,0 +1,35 @@
+.input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 800px;
+    height: 100px;
+    padding: 15px;
+    background-color: #fff;
+    border: 2px solid #b9b9b9;
+    border-radius: 20px;
+    overflow: hidden;
+    background-color: #cccccc;
+    .content {
+        flex: 1;
+        .textarea {
+            width: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            font-size: large;
+            scrollbar-width: none;
+            background-color: #cccccc;
+        }
+    }
+    .footer {
+        display: flex;
+        min-height: 30px;
+        justify-content: space-between;
+        .left {
+            display: flex;
+            gap: 5px;
+        }
+    }
+}
