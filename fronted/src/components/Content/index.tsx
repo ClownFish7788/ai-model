@@ -7,6 +7,7 @@ import { addMessage, pushContent, toggleIsPending } from '../../store/slices/Mes
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { v4 as uuidv4 } from 'uuid'
 import { type Msg } from '../../store/slices/Message'
+import useAuthScroll from '../../hooks/useAuthScroll'
 
 const Content = () => {
     // 会话ID
@@ -14,7 +15,7 @@ const Content = () => {
     const newMessage = useRef<string>("")
 
     const dispatch = useAppDispatch()
-    const {msgList} = useAppSelector(state => state.message)
+    const {msgList, isPending} = useAppSelector(state => state.message)
     const message = useRef("")
     const msgContainer = useRef<null | HTMLDivElement>(null)
     // 发送消息
@@ -53,10 +54,9 @@ const Content = () => {
         }
         dispatch(addMessage(newMsg))
     }
-    useEffect(() => {
-        const container = msgContainer.current
-        if(container) container.scrollTop = container.scrollHeight
-    }, [msgList])
+
+    // 自动锁定最底层
+    useAuthScroll(msgContainer, msgList, isPending)
 
     // SSE
     const newContent = useRef("")
