@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import Button from '../Button'
 import Item from '../Item'
 import styles from './Alside.module.scss'
+import VirtualList from '../VirtualList'
 
 
 const Alside = () => {
@@ -45,16 +46,18 @@ const Alside = () => {
                     <div>&lt;-</div>
                 </div>
                 <div className={styles.lower}>
-                    <Button />
+                    <Button content="FUCK YOU" />
                 </div>
             </header>
             <div 
                 ref={itemListRef}
                 className={`${styles.itemList} ${isScrolling ? styles.scrolling : ''}`}
             >
-                {
-                    Array.from({length: 100}).map((_, index) => <Item key={index}/>)
-                }
+                <VirtualList isEqualHeight containerRef={itemListRef}>
+                    {
+                        Array.from({length: 100}).map((_, index) => <Item key={index}/>)
+                    }
+                </VirtualList>
             </div>
             <footer className={styles.footer}>
 
