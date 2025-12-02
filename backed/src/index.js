@@ -2,6 +2,8 @@ const { OpenAI } = require("openai")
 require("dotenv").config()
 const express = require("express")
 const cors = require("cors")
+const fs = require("fs").promises
+const path = require("path")
 
 const app = express()
 const port = 3001
@@ -12,6 +14,40 @@ const openai = new OpenAI({
 })
 
 const sseClients = new Map()
+
+// 历史记录存储文件路径
+const HISTORY_FILE_PATH = path.join(__dirname, '..', 'data', 'history.json')
+
+// 确保数据目录存在
+async function ensureDataDirectory() {
+    const dataDir = path.dirname(HISTORY_FILE_PATH)
+    try {
+        await fs.access(dataDir)
+    } catch {
+        await fs.mkdir(dataDir, { recursive: true })
+    }
+}
+
+// 读取历史记录
+async function readHistory() {
+    try {
+        await ensureDataDirectory()
+        const data = await fs.readFile(HISTORY_FILE_PATH, 'utf-8')
+        return JSON.parse(data)
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            // 文件不存在，返回空数组
+            return { historyList: [] }
+        }
+        throw error
+    }
+}
+
+// 保存历史记录
+async function saveHistory(historyList) {
+    await ensureDataDirectory()
+    await fs.writeFile(HISTORY_FILE_PATH, JSON.stringify({ historyList }, null, 2), 'utf-8')
+}
 
 app.use(cors()) //允许所有跨域请求
 app.use(express.json()) //解析json请求体
@@ -92,6 +128,135 @@ app.get('/sse', (req, res) => {
 
     req.on('close', cleanUp)
     req.on('error', cleanUp)
+})
+
+// ==================== 历史记录 API ====================
+
+// 获取所有历史记录
+app.get('/api/history', async (req, res) => {
+    try {
+        const data = await readHistory()
+        res.json(data)
+    } catch (error) {
+        console.error('GET /api/history error:', error)
+        res.status(500).json({ error: '获取历史记录失败' })
+    }
+})
+
+// 根据 ID 获取单个历史记录
+app.get('/api/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const data = await readHistory()
+        const history = data.historyList.find(item => item.id === id)
+        
+        if (!history) {
+            return res.status(404).json({ error: '历史记录不存在' })
+        }
+        
+        res.json(history)
+    } catch (error) {
+        console.error('GET /api/history/:id error:', error)
+        res.status(500).json({ error: '获取历史记录失败' })
+    }
+})
+
+// 保存新的历史记录
+app.post('/api/history', async (req, res) => {
+    try {
+        const { message, time, id, name } = req.body
+        
+        // 验证必填字段
+        if (!id) {
+            return res.status(400).json({ error: 'id 是必填参数' })
+        }
+        if (!name) {
+            return res.status(400).json({ error: 'name 是必填参数' })
+        }
+        if (!Array.isArray(message)) {
+            return res.status(400).json({ error: 'message 必须是数组' })
+        }
+        
+        const data = await readHistory()
+        
+        // 检查是否已存在相同 ID 的记录
+        const existingIndex = data.historyList.findIndex(item => item.id === id)
+        
+        const newHistory = {
+            message,
+            time: time || new Date().toISOString(),
+            id,
+            name
+        }
+        
+        if (existingIndex !== -1) {
+            // 如果已存在，更新记录
+            data.historyList[existingIndex] = newHistory
+            await saveHistory(data.historyList)
+            res.json({ message: '历史记录已更新', history: newHistory })
+        } else {
+            // 新记录，添加到列表开头（最新的在前面）
+            data.historyList.unshift(newHistory)
+            await saveHistory(data.historyList)
+            res.json({ message: '历史记录已保存', history: newHistory })
+        }
+    } catch (error) {
+        console.error('POST /api/history error:', error)
+        res.status(500).json({ error: '保存历史记录失败' })
+    }
+})
+
+// 更新历史记录
+app.put('/api/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const { message, time, name } = req.body
+        
+        const data = await readHistory()
+        const existingIndex = data.historyList.findIndex(item => item.id === id)
+        
+        if (existingIndex === -1) {
+            return res.status(404).json({ error: '历史记录不存在' })
+        }
+        
+        // 更新记录
+        const updatedHistory = {
+            ...data.historyList[existingIndex],
+            ...(message !== undefined && { message }),
+            ...(time !== undefined && { time }),
+            ...(name !== undefined && { name })
+        }
+        
+        data.historyList[existingIndex] = updatedHistory
+        await saveHistory(data.historyList)
+        
+        res.json({ message: '历史记录已更新', history: updatedHistory })
+    } catch (error) {
+        console.error('PUT /api/history/:id error:', error)
+        res.status(500).json({ error: '更新历史记录失败' })
+    }
+})
+
+// 删除历史记录
+app.delete('/api/history/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const data = await readHistory()
+        
+        const existingIndex = data.historyList.findIndex(item => item.id === id)
+        
+        if (existingIndex === -1) {
+            return res.status(404).json({ error: '历史记录不存在' })
+        }
+        
+        data.historyList.splice(existingIndex, 1)
+        await saveHistory(data.historyList)
+        
+        res.json({ message: '历史记录已删除' })
+    } catch (error) {
+        console.error('DELETE /api/history/:id error:', error)
+        res.status(500).json({ error: '删除历史记录失败' })
+    }
 })
 
 app.listen(port, () => {

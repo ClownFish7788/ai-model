@@ -16,6 +16,8 @@ const Button = ({content, callback, selected = false, type = 'button'}: Props) =
             callback?.()
         } else if(type === 'switch') {
             setIsSelected(prev => !prev)
+        } else {
+            callback?.()
         }
     }
     return (

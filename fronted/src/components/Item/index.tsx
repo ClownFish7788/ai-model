@@ -1,10 +1,18 @@
+import classNames from 'classnames'
 import styles from './Item.module.scss'
 
-const Item = () => {
+type Props = {
+    content?: string
+    selected?: boolean
+    id?: string,
+    handleClick: (id: string) => void
+}
+
+const Item = ({content = "新对话", selected = false, id = "", handleClick}: Props) => {
 
     return (
-        <div className={styles.item}>
-            gdhjsjakgdhijasg
+        <div className={classNames(styles.item, selected && 'selected')} onClick={() => handleClick(id)}>
+            {content}
             <div className={styles.more}></div>
         </div>
     )

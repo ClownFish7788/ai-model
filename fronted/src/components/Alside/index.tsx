@@ -3,13 +3,34 @@ import Button from '../Button'
 import Item from '../Item'
 import styles from './Alside.module.scss'
 import VirtualList from '../VirtualList'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { toggleMessage } from '../../store/slices/Message'
+import { addNewChat, cancelNewChat, initHistoryList } from '../../store/slices/History'
 
 
 const Alside = () => {
     const itemListRef = useRef<HTMLDivElement>(null)
     const [isScrolling, setIsScrolling] = useState(false)
     const scrollTimerRef = useRef<number | null>(null)
+    const { historyList } = useAppSelector(state => state.history)
+    const { name } = useAppSelector(state => state.message)
+    const dispatch = useAppDispatch()
 
+    // 开始时获取 history 列表
+    useEffect(() => {
+        const getHistoryList = async () => {
+            try {
+                const resp = await fetch("http://localhost:3001/api/history")
+                const data = await resp.json()
+                dispatch(initHistoryList(data.historyList))
+            } catch {
+                alert("历史数据获取失败")
+            }
+        }
+        getHistoryList()
+    }, [dispatch])
+
+    // 滚动
     useEffect(() => {
         const handleScroll = () => {
             setIsScrolling(true)
@@ -38,6 +59,41 @@ const Alside = () => {
         }
     }, [])
 
+    // 开启新对话
+    const openNewChat = () => {
+        if(historyList.length === 0) return
+        const newName = "新对话"
+        dispatch(addNewChat({
+            id: "",
+            name: newName
+        }))
+        dispatch(toggleMessage({
+            id: "",
+            name: newName,
+            message: []
+        }))
+    }
+
+    // 获取数据
+    const getMessageId = async (id: string) => {
+        if(!id) return
+        try {
+            const resp = await fetch(`http://localhost:3001/api/history/${id}`)
+            const data = await resp.json()
+            // 如果开启新对话，但未聊天并回到历史聊天
+            if(name === "新对话" && historyList[0].name === "新对话" && historyList[0].id === "") {
+                dispatch(cancelNewChat())
+            }
+            dispatch(toggleMessage(data))
+        }catch {
+            alert("找不到该数据")
+        }
+    }
+
+    useEffect(() => {
+        console.log("历史列表:", historyList)
+    }, [historyList])
+
     return (
         <div className={styles.Alside}>
             <header className={styles.header}>
@@ -46,7 +102,7 @@ const Alside = () => {
                     <div>&lt;-</div>
                 </div>
                 <div className={styles.lower}>
-                    <Button content="FUCK YOU" />
+                    <Button content="开启新对话" callback={openNewChat} />
                 </div>
             </header>
             <div 
@@ -55,7 +111,12 @@ const Alside = () => {
             >
                 <VirtualList isEqualHeight containerRef={itemListRef}>
                     {
-                        Array.from({length: 100}).map((_, index) => <Item key={index}/>)
+                        historyList?.map(item => <Item 
+                            id={item.id}
+                            content={item.name}
+                            key={item.id}
+                            handleClick={getMessageId}
+                        />)
                     }
                 </VirtualList>
             </div>

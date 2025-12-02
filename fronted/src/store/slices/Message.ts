@@ -10,11 +10,15 @@ export type Msg = {
 type InitialState = {
     msgList: Msg[],
     isPending: boolean
+    id?: string,
+    name?: string
 }
 
 const initialState: InitialState = {
     msgList: [],
-    isPending: false
+    isPending: false,
+    id: "",
+    name: "新对话"
 }
 
 const MessageStore = createSlice({
@@ -31,10 +35,27 @@ const MessageStore = createSlice({
         pushContent: (state, action) => {
             const content = action.payload
             state.msgList[state.msgList.length - 1].content += content
-        } 
+        },
+        toggleMessage: (state, action) => {
+            if(!action.payload) return
+            const message = action.payload
+            console.log(message)
+            return {
+                id: message.id,
+                msgList: message.message,
+                name: message.name,
+                isPending: false
+            }
+        },
+        assignChatId: (state, action) => {
+            state.id = action.payload
+        }, 
+        changeChatName: (state, action) => {
+            state.name = action.payload
+        }
     }
 })
 
-export const { addMessage, toggleIsPending, pushContent } = MessageStore.actions
+export const { addMessage, toggleIsPending, pushContent, toggleMessage, assignChatId, changeChatName } = MessageStore.actions
 
 export default MessageStore.reducer

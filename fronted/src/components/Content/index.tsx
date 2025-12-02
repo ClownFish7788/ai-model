@@ -3,7 +3,7 @@ import Input from '../Input'
 import MarkdownMessage from '../MarkdownMessage'
 import Message from '../Message'
 import styles from './content.module.scss'
-import { addMessage, pushContent, toggleIsPending } from '../../store/slices/Message'
+import { addMessage, assignChatId, changeChatName, pushContent, toggleIsPending } from '../../store/slices/Message'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { v4 as uuidv4 } from 'uuid'
 import { type Msg } from '../../store/slices/Message'
@@ -15,7 +15,7 @@ const Content = () => {
     const newMessage = useRef<string>("")
 
     const dispatch = useAppDispatch()
-    const {msgList, isPending} = useAppSelector(state => state.message)
+    const { msgList, isPending, id, name } = useAppSelector(state => state.message)
     const message = useRef("")
     const msgContainer = useRef<null | HTMLDivElement>(null)
     // 发送消息
@@ -53,6 +53,14 @@ const Content = () => {
             console.error('消息推送失败')
         }
         dispatch(addMessage(newMsg))
+        dispatch(changeChatName(msg.length > 10 ? msg.slice(0, 10) + "..." : msg))
+        // 发送成功自动锁定底部
+        const container = msgContainer.current
+        if(container) {
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight - container.clientHeight
+            }, 0)
+        }
     }
 
     // 自动锁定最底层
@@ -61,7 +69,13 @@ const Content = () => {
     // SSE
     const newContent = useRef("")
     useEffect(() => {
-        conversationId.current = uuidv4()
+        // 初始化 id 和 state
+        if(!id) {
+            conversationId.current = uuidv4()
+            dispatch(assignChatId(conversationId.current))
+        } else {
+            conversationId.current = id
+        }
         const eventSource = new EventSource(`http://localhost:3001/sse?conversationId=${conversationId.current}`);
         
         eventSource.addEventListener('connected', (e) => {
@@ -69,7 +83,6 @@ const Content = () => {
         });
         
         eventSource.addEventListener('message', (e) => {
-            // console.log(JSON.parse(e?.data))
             const content = JSON.parse(e?.data).content
             newContent.current = content
             if(content === '' && newMessage.current !== "") {
@@ -99,9 +112,32 @@ const Content = () => {
         return () => {
             eventSource.close();
         };
-    }, [dispatch])
+    }, [dispatch, id])
 
-
+    // 根据 isPending 来判断是否提交记录
+    // 每当数据接收完毕提交
+    useEffect(() => {
+        if(isPending || msgList.length === 0) return
+        const sumbitData = async () => {
+            if(!id) return
+            try {
+                const resp = await fetch(`http://localhost:3001/api/history`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        message: msgList,
+                        name: name,
+                        time: Date.now().toString(),
+                        id
+                    })
+                })
+                console.log(resp)
+            }catch {
+                alert("上传失败")
+            }
+        }
+        sumbitData()
+    }, [isPending, msgList, id, name])
 
     return (
         <div className={styles.content}>

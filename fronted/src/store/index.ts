@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import MessageReducer from './slices/Message'
+import HistoryReducer from './slices/History'
 
 export const store = configureStore({
     reducer: {
-        message: MessageReducer
+        message: MessageReducer,
+        history: HistoryReducer
     }
 })
 
