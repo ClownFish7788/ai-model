@@ -6,6 +6,7 @@ import VirtualList from '../VirtualList'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { toggleMessage } from '../../store/slices/Message'
 import { addNewChat, cancelNewChat, initHistoryList } from '../../store/slices/History'
+import useResend from '../../hooks/useResend'
 
 
 const Alside = () => {
@@ -74,12 +75,22 @@ const Alside = () => {
         }))
     }
 
+    // 包装请求
+    const fetchHistory = async (id: string) => {
+        const resp = await fetch(`http://localhost:3001/api/history/${id}`)
+        if(resp.ok) {
+            return resp.json()
+        }
+        throw new Error("网络错误")
+    }
+    const {excute} = useResend({ callback: fetchHistory, maxRetries: 3 })
+
     // 获取数据
     const getMessageId = async (id: string) => {
         if(!id) return
         try {
-            const resp = await fetch(`http://localhost:3001/api/history/${id}`)
-            const data = await resp.json()
+            const data = await excute(id)
+            console.log(data)
             // 如果开启新对话，但未聊天并回到历史聊天
             if(name === "新对话" && historyList[0].name === "新对话" && historyList[0].id === "") {
                 dispatch(cancelNewChat())

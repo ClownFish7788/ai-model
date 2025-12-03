@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { v4 as uuidv4 } from 'uuid'
 import { type Msg } from '../../store/slices/Message'
 import useAuthScroll from '../../hooks/useAuthScroll'
+import { assignNewChat } from '../../store/slices/History'
 
 const Content = () => {
     // 会话ID
@@ -49,17 +50,22 @@ const Content = () => {
             }
         }catch {
             alert("消息推送失败，请重试")
-            dispatch(toggleIsPending(true))
+            dispatch(toggleIsPending(false))
             console.error('消息推送失败')
         }
         dispatch(addMessage(newMsg))
-        dispatch(changeChatName(msg.length > 10 ? msg.slice(0, 10) + "..." : msg))
+        const newName = msg.length > 10 ? msg.slice(0, 8) + "..." : msg
+        dispatch(changeChatName(newName))
+        dispatch(assignNewChat({
+            id: conversationId.current,
+            name: newName
+        }))
         // 发送成功自动锁定底部
         const container = msgContainer.current
         if(container) {
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 container.scrollTop = container.scrollHeight - container.clientHeight
-            }, 0)
+            })
         }
     }
 
@@ -83,10 +89,10 @@ const Content = () => {
         });
         
         eventSource.addEventListener('message', (e) => {
-            const content = JSON.parse(e?.data).content
+            const data = JSON.parse(e?.data)
+            const content = data.content
             newContent.current = content
             if(content === '' && newMessage.current !== "") {
-                dispatch(toggleIsPending(false))
                 newMessage.current = ""
             }else if(content !== ""){
                 dispatch(pushContent(content))
@@ -98,6 +104,9 @@ const Content = () => {
                     id: uuidv4()
                 }))
             }
+        })
+        eventSource.addEventListener('done', () => {
+            dispatch(toggleIsPending(false))
         })
 
         eventSource.addEventListener('time', (e) => {
