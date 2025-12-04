@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef } from 'react'
+import { startTransition, useDeferredValue, useEffect, useRef } from 'react'
 import Input from '../Input'
 import MarkdownMessage from '../MarkdownMessage'
 import Message from '../Message'
@@ -96,14 +96,18 @@ const Content = () => {
             if(content === '' && newMessage.current !== "") {
                 newMessage.current = ""
             }else if(content !== ""){
-                dispatch(pushContent(content))
+                startTransition(() => {
+                    dispatch(pushContent(content))
+                })
                 newMessage.current += content
             } else {
-                dispatch(addMessage({
-                    role: "system",
-                    content: "",
-                    id: uuidv4()
-                }))
+                startTransition(() => {
+                    dispatch(addMessage({
+                        role: "system",
+                        content: "",
+                        id: uuidv4()
+                    }))
+                })
             }
         })
         eventSource.addEventListener('done', () => {
