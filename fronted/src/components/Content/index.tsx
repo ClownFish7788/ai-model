@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useDeferredValue, useEffect, useRef } from 'react'
 import Input from '../Input'
 import MarkdownMessage from '../MarkdownMessage'
 import Message from '../Message'
@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { type Msg } from '../../store/slices/Message'
 import useAuthScroll from '../../hooks/useAuthScroll'
 import { assignNewChat } from '../../store/slices/History'
+import VirtualList from '../VirtualList'
 
 const Content = () => {
     // 会话ID
@@ -17,6 +18,7 @@ const Content = () => {
 
     const dispatch = useAppDispatch()
     const { msgList, isPending, id, name } = useAppSelector(state => state.message)
+    const defferedMd = useDeferredValue(msgList)
     const message = useRef("")
     const msgContainer = useRef<null | HTMLDivElement>(null)
     // 发送消息
@@ -73,7 +75,6 @@ const Content = () => {
     useAuthScroll(msgContainer, msgList, isPending)
 
     // SSE
-    const newContent = useRef("")
     useEffect(() => {
         // 初始化 id 和 state
         if(!id) {
@@ -91,7 +92,7 @@ const Content = () => {
         eventSource.addEventListener('message', (e) => {
             const data = JSON.parse(e?.data)
             const content = data.content
-            newContent.current = content
+
             if(content === '' && newMessage.current !== "") {
                 newMessage.current = ""
             }else if(content !== ""){
@@ -151,12 +152,14 @@ const Content = () => {
     return (
         <div className={styles.content}>
             <div className={styles.messages} ref={msgContainer}>
-                {
-                    msgList.map((item: Msg) => {
-                        if(item.role === "user") return <Message content={item.content} key={item.id} />
-                        return <MarkdownMessage content={item.content} key={item.id} newContent={newContent.current}  />
-                    })
-                }
+                <VirtualList isEqualHeight={false} containerRef={msgContainer}>
+                    {
+                        defferedMd.map((item: Msg) => {
+                            if(item.role === "user") return <Message content={item.content} key={item.id} />
+                            return <MarkdownMessage content={item.content} key={item.id} />
+                        })
+                    }
+                </VirtualList>
             </div>
             <div className={styles.inputBar}>
                 <Input sendMsg={sendMessage} />

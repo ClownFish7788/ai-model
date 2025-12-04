@@ -113,12 +113,17 @@ const VirtualList = ({isEqualHeight, containerRef, children, overScan = 3, estim
     // 测量实际高度
     const handleItemMeasure = useCallback((index: number, height: number) => {
         if(isEqualHeight) return
-        const newMap = new Map(heightMap)
-        if(newMap.get(index) !== height) {
-            newMap.set(index, height)
-        }
-        setHeightMap(newMap)
-    }, [isEqualHeight, heightMap])
+        setHeightMap(prev => {
+            const previousHeight = prev.get(index)
+            if(previousHeight === height) {
+                return prev
+            }
+
+            const next = new Map(prev)
+            next.set(index, height)
+            return next
+        })
+    }, [isEqualHeight])
 
     // 监听容器尺寸变化
     useEffect(() => {

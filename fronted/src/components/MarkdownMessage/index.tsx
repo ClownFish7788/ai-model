@@ -3,8 +3,7 @@ import styles from './MarkdownMessage.module.scss'
 import CodeBlock from '../CodeBlock'
 
 type Props = {
-    content: string,
-    newContent: string
+    content: string
 }
 
 export type Md = {
