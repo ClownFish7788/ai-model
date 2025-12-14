@@ -101,10 +101,6 @@ const Alside = () => {
         }
     }
 
-    useEffect(() => {
-        console.log("历史列表:", historyList)
-    }, [historyList])
-
     return (
         <div className={styles.Alside}>
             <header className={styles.header}>

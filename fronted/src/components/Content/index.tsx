@@ -10,6 +10,8 @@ import { type Msg } from '../../store/slices/Message'
 import useAuthScroll from '../../hooks/useAuthScroll'
 import { assignNewChat } from '../../store/slices/History'
 import VirtualList from '../VirtualList'
+import { submitData } from '../../api'
+import useSSEStream from '../../hooks/useSSEStream'
 
 const Content = () => {
     // 会话ID
@@ -75,29 +77,15 @@ const Content = () => {
     useAuthScroll(msgContainer, msgList, isPending)
 
     // SSE
-    useEffect(() => {
-        // 初始化 id 和 state
-        if(!id) {
-            conversationId.current = uuidv4()
-            dispatch(assignChatId(conversationId.current))
-        } else {
-            conversationId.current = id
-        }
-        const eventSource = new EventSource(`http://localhost:3001/sse?conversationId=${conversationId.current}`);
-        
-        eventSource.addEventListener('connected', (e) => {
-            console.log(e.data);
-        });
-        
-        eventSource.addEventListener('message', (e) => {
-            const data = JSON.parse(e?.data)
+    const MessageCallback = (e) => {
+        const data = JSON.parse(e?.data)
             const content = data.content
 
             if(content === '' && newMessage.current !== "") {
                 newMessage.current = ""
             }else if(content !== ""){
                 startTransition(() => {
-                    dispatch(pushContent(content))
+                    dispatch(pushContent({content, id: conversationId.current!}))
                 })
                 newMessage.current += content
             } else {
@@ -109,48 +97,92 @@ const Content = () => {
                     }))
                 })
             }
-        })
-        eventSource.addEventListener('done', () => {
-            dispatch(toggleIsPending(false))
-        })
-
-        eventSource.addEventListener('time', (e) => {
-            console.log(e.data);
-        });
-
-        eventSource.onerror = (e) => {
-            console.error('SSE error:', e);
-        };
+    }
+    const DoneCallback = () => {
+        dispatch(toggleIsPending(false))
+    }
+    useEffect(() => {
+        if(!id) {
+            conversationId.current = uuidv4()
+            dispatch(assignChatId(conversationId.current))
+        } else {
+            conversationId.current = id
+        }
+    }, [id, dispatch])
+    useSSEStream({
+        id: conversationId.current || "",
+        MessageCallback,
+        DoneCallback,
+        isPending
+    })
+    // useEffect(() => {
+    //     // 初始化 id 和 state
+    //     if(!id) {
+    //         conversationId.current = uuidv4()
+    //         dispatch(assignChatId(conversationId.current))
+    //     } else {
+    //         conversationId.current = id
+    //     }
+    //     const eventSource = new EventSource(`http://localhost:3001/sse?conversationId=${conversationId.current}`);
         
-        // 清理函数：在组件卸载时关闭连接
-        return () => {
-            eventSource.close();
-        };
-    }, [dispatch, id])
+    //     eventSource.addEventListener('connected', (e) => {
+    //         console.log(e.data);
+    //     });
+        
+    //     eventSource.addEventListener('message', (e) => {
+    //         const data = JSON.parse(e?.data)
+    //         const content = data.content
+
+    //         if(content === '' && newMessage.current !== "") {
+    //             newMessage.current = ""
+    //         }else if(content !== ""){
+    //             startTransition(() => {
+    //                 dispatch(pushContent({content, id: conversationId.current!}))
+    //             })
+    //             newMessage.current += content
+    //         } else {
+    //             startTransition(() => {
+    //                 dispatch(addMessage({
+    //                     role: "system",
+    //                     content: "",
+    //                     id: uuidv4()
+    //                 }))
+    //             })
+    //         }
+    //     })
+    //     eventSource.addEventListener('done', () => {
+    //         dispatch(toggleIsPending(false))
+    //     })
+
+    //     eventSource.addEventListener('time', (e) => {
+    //         console.log(e.data);
+    //     });
+
+    //     eventSource.onerror = (e) => {
+    //         console.error('SSE error:', e);
+    //     };
+        
+    //     // 清理函数：在组件卸载时关闭连接
+    //     return () => {
+    //         eventSource.close();
+    //     };
+    // }, [dispatch, id])
 
     // 根据 isPending 来判断是否提交记录
     // 每当数据接收完毕提交
     useEffect(() => {
         if(isPending || msgList.length === 0) return
-        const sumbitData = async () => {
-            if(!id) return
-            try {
-                const resp = await fetch(`http://localhost:3001/api/history`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        message: msgList,
-                        name: name,
-                        time: Date.now().toString(),
-                        id
-                    })
-                })
-                console.log(resp)
-            }catch {
-                alert("上传失败")
-            }
+        const data = {
+            message: msgList,
+            name: name,
+            time: Date.now().toString(),
+            id
         }
-        sumbitData()
+        try {
+            submitData(data)
+        } catch(err) {
+            console.error("上传失败", err)
+        }
     }, [isPending, msgList, id, name])
 
     return (
