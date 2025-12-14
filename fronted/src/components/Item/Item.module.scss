@@ -9,6 +9,9 @@
     transition: all 0.2s;
     cursor: pointer;
     gap:5px;
+    &.selected {
+        background-color: white;
+    }
     .more {
         border-radius: 50%;
         background-color: #adadad;
@@ -18,11 +21,11 @@
         width: 20px;
     }
     &:hover {
-        background-color: #c5c5c5;
+        background-color: #dddddd;
         .more {
             opacity: 1;
             &:hover {
-                background-color: #7e7e7e;
+                background-color: #a0a0a0;
                 color: #636363;
             }
         }

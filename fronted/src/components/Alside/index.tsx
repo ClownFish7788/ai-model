@@ -14,7 +14,7 @@ const Alside = () => {
     const [isScrolling, setIsScrolling] = useState(false)
     const scrollTimerRef = useRef<number | null>(null)
     const { historyList } = useAppSelector(state => state.history)
-    const { name } = useAppSelector(state => state.message)
+    const { name, id } = useAppSelector(state => state.message)
     const dispatch = useAppDispatch()
 
     // 开始时获取 history 列表
@@ -118,7 +118,8 @@ const Alside = () => {
             >
                 <VirtualList isEqualHeight containerRef={itemListRef}>
                     {
-                        historyList?.map(item => <Item 
+                        historyList?.map(item => <Item
+                            selected={item.id === id} 
                             id={item.id}
                             content={item.name}
                             key={item.id}

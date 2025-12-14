@@ -2,11 +2,9 @@ import { useCallback, useEffect, useRef } from "react"
 
 interface UseSSEStreamProps {
     id: string
-    MessageCallback: (e:any) => void
+    MessageCallback: (e:any, updateId: string) => void
     DoneCallback: (doneId: string) => void
     isPending: boolean
-    // ConnectedCallback?: (e:any) => void
-    // TimeCallback?: (e:any) => void
 }
 
 const useSSEStream = ({ id, MessageCallback, DoneCallback, isPending }: UseSSEStreamProps) => {
@@ -34,7 +32,7 @@ const useSSEStream = ({ id, MessageCallback, DoneCallback, isPending }: UseSSESt
         if(streams.has(id)) return
         const eventSource = new EventSource(`http://localhost:3001/sse?conversationId=${id}`)
         const handleMessage = (e) => {
-            callbackRef.current.MessageCallback(e)
+            callbackRef.current.MessageCallback(e, id)
         }
         const handleDone = () => {
             callbackRef.current.DoneCallback(id)

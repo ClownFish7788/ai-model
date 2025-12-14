@@ -77,7 +77,7 @@ const Content = () => {
     useAuthScroll(msgContainer, msgList, isPending)
 
     // SSE（redux + hook）
-    const MessageCallback = (e) => {
+    const MessageCallback = (e, updateId: string) => {
         const data = JSON.parse(e?.data)
             const content = data.content
 
@@ -85,7 +85,7 @@ const Content = () => {
                 newMessage.current = ""
             }else if(content !== ""){
                 startTransition(() => {
-                    dispatch(pushContent({content, id: conversationId.current!}))
+                    dispatch(pushContent({content, id: updateId}))
                 })
                 newMessage.current += content
             } else {
