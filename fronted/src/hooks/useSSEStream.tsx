@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from "react"
 interface UseSSEStreamProps {
     id: string
     MessageCallback: (e:any) => void
-    DoneCallback: () => void
+    DoneCallback: (doneId: string) => void
     isPending: boolean
     // ConnectedCallback?: (e:any) => void
     // TimeCallback?: (e:any) => void
@@ -37,7 +37,7 @@ const useSSEStream = ({ id, MessageCallback, DoneCallback, isPending }: UseSSESt
             callbackRef.current.MessageCallback(e)
         }
         const handleDone = () => {
-            callbackRef.current.DoneCallback()
+            callbackRef.current.DoneCallback(id)
             if(id !== activeId.current) {
                 closeConnection(id)
             }
@@ -63,9 +63,11 @@ const useSSEStream = ({ id, MessageCallback, DoneCallback, isPending }: UseSSESt
 
     // 组件卸载时关闭所有
     useEffect(() => {
+        // 在组件卸载时会先将所有的ref.current变为null，再执行useEffect的清理函数
+        const streams = streamMap.current
         return () => {
-            streamMap.current.forEach(es => es.close())
-            streamMap.current.clear()
+            streams.forEach(es => es.close())
+            streams.clear()
         }
     }, [])
     return closeConnection

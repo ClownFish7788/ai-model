@@ -1,9 +1,9 @@
-import { startTransition, useDeferredValue, useEffect, useRef } from 'react'
+import { startTransition, useCallback, useDeferredValue, useEffect, useRef } from 'react'
 import Input from '../Input'
 import MarkdownMessage from '../MarkdownMessage'
 import Message from '../Message'
 import styles from './content.module.scss'
-import { addMessage, assignChatId, changeChatName, pushContent, toggleIsPending } from '../../store/slices/Message'
+import { addMessage, assignChatId, changeChatName, pushContent, toggleIsPending, updateOldChat } from '../../store/slices/Message'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { v4 as uuidv4 } from 'uuid'
 import { type Msg } from '../../store/slices/Message'
@@ -76,7 +76,7 @@ const Content = () => {
     // 自动锁定最底层
     useAuthScroll(msgContainer, msgList, isPending)
 
-    // SSE
+    // SSE（redux + hook）
     const MessageCallback = (e) => {
         const data = JSON.parse(e?.data)
             const content = data.content
@@ -98,9 +98,11 @@ const Content = () => {
                 })
             }
     }
-    const DoneCallback = () => {
+    const DoneCallback = useCallback((doneId: string) => {
         dispatch(toggleIsPending(false))
-    }
+        // done之后自动提交
+        if(doneId) dispatch(updateOldChat(doneId))
+    }, [dispatch])
     useEffect(() => {
         if(!id) {
             conversationId.current = uuidv4()
@@ -110,63 +112,11 @@ const Content = () => {
         }
     }, [id, dispatch])
     useSSEStream({
-        id: conversationId.current || "",
+        id: id || conversationId.current || "",
         MessageCallback,
         DoneCallback,
         isPending
     })
-    // useEffect(() => {
-    //     // 初始化 id 和 state
-    //     if(!id) {
-    //         conversationId.current = uuidv4()
-    //         dispatch(assignChatId(conversationId.current))
-    //     } else {
-    //         conversationId.current = id
-    //     }
-    //     const eventSource = new EventSource(`http://localhost:3001/sse?conversationId=${conversationId.current}`);
-        
-    //     eventSource.addEventListener('connected', (e) => {
-    //         console.log(e.data);
-    //     });
-        
-    //     eventSource.addEventListener('message', (e) => {
-    //         const data = JSON.parse(e?.data)
-    //         const content = data.content
-
-    //         if(content === '' && newMessage.current !== "") {
-    //             newMessage.current = ""
-    //         }else if(content !== ""){
-    //             startTransition(() => {
-    //                 dispatch(pushContent({content, id: conversationId.current!}))
-    //             })
-    //             newMessage.current += content
-    //         } else {
-    //             startTransition(() => {
-    //                 dispatch(addMessage({
-    //                     role: "system",
-    //                     content: "",
-    //                     id: uuidv4()
-    //                 }))
-    //             })
-    //         }
-    //     })
-    //     eventSource.addEventListener('done', () => {
-    //         dispatch(toggleIsPending(false))
-    //     })
-
-    //     eventSource.addEventListener('time', (e) => {
-    //         console.log(e.data);
-    //     });
-
-    //     eventSource.onerror = (e) => {
-    //         console.error('SSE error:', e);
-    //     };
-        
-    //     // 清理函数：在组件卸载时关闭连接
-    //     return () => {
-    //         eventSource.close();
-    //     };
-    // }, [dispatch, id])
 
     // 根据 isPending 来判断是否提交记录
     // 每当数据接收完毕提交
