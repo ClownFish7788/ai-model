@@ -11,7 +11,7 @@ type Props = {
 const Item = ({content = "新对话", selected = false, id = "", handleClick}: Props) => {
 
     return (
-        <div className={classNames(styles.item, selected && styles.selected)} onClick={() => handleClick(id)}>
+        <div className={classNames(styles.item, selected ? styles.selected : styles.noSelected)} onClick={() => handleClick(id)}>
             {content}
             <div className={styles.more}></div>
         </div>

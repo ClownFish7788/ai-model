@@ -9,6 +9,7 @@
     transition: all 0.2s;
     cursor: pointer;
     gap:5px;
+    transition: all 0.3s;
     &.selected {
         background-color: white;
     }
@@ -19,15 +20,16 @@
         opacity: 0;
         height: 20px;
         width: 20px;
+        &:hover {
+            background-color: #a0a0a0;
+            color: #636363;
+            opacity: 1;
+        }
     }
-    &:hover {
+    &.noSelected:hover {
         background-color: #dddddd;
         .more {
             opacity: 1;
-            &:hover {
-                background-color: #a0a0a0;
-                color: #636363;
-            }
         }
     }
 }
