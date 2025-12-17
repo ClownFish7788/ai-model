@@ -73,7 +73,7 @@ const useRetrySend = <T,>({
     }, [])
 
     const excute = useCallback((...args: any[]) => {
-        if(isLoading || isCoolingDown) return
+        if(isLoading || isCoolingDown || attempt < maxRetries) return
         setAttempt(prev => prev + 1)
         attemptRef.current = 0
         
@@ -109,7 +109,7 @@ const useRetrySend = <T,>({
             }
         }
         return attemptRequest(attemptRef.current)
-    }, [callback, isCoolingDown, isLoading, maxRetries, onRetry, retryDelay, startCoolDown])
+    }, [callback, isCoolingDown, isLoading, maxRetries, onRetry, retryDelay, startCoolDown, attempt])
 
     return {excute, isCoolingDown, reset, cancelRetry}
 }

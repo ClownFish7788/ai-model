@@ -2,10 +2,10 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 // 用于判断哪一行是否需要高亮
 const parseMeta = (meta:string | undefined | null) => {
-    if(!meta) return (lineNum: number) => false
+    if(!meta) return () => false
     const exp = /\{([^}]+)\}/
     const match = exp.exec(meta)
-    if(!match) return (lineNum: number) => false
+    if(!match) return () => false
     const parts = match[1].split(',').map(p => p.trim())
     const lineNumSet = new Set<number>()
     for(const p of parts) {

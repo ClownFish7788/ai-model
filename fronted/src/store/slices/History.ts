@@ -1,13 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 
-type history = {
+export type History = {
     id: string
     name: string
 }
 
 type InitialState = {
-    historyList: history[]
+    historyList: History[]
 }
 
 const initialState: InitialState = {
@@ -32,7 +32,7 @@ const HistoryStore = createSlice({
         initHistoryList: (state, action) => {
             const list = action.payload
             if(list.length <= 0) return
-            const historyList = list.map(item => {
+            const historyList = list.map((item: History) => {
                 return {
                     id: item?.id || "",
                     name: item.name

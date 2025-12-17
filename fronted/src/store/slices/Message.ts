@@ -77,6 +77,7 @@ const MessageStore = createSlice({
         },
         pushContent: (state, action) => {
             const { content, id } = action.payload
+            console.log(action)
             if(id === state.id) {
                 state.msgList[state.msgList.length - 1].content += content
             } else if(state.oldChat.some(item => item.id === id)) {

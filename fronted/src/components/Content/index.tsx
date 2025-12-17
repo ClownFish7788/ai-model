@@ -64,6 +64,11 @@ const Content = () => {
             id: conversationId.current,
             name: newName
         }))
+        dispatch(addMessage({
+            role: "system",
+            content: "",
+            id: uuidv4()
+        }))
         // 发送成功自动锁定底部
         const container = msgContainer.current
         if(container) {
@@ -77,7 +82,7 @@ const Content = () => {
     useAuthScroll(msgContainer, msgList, isPending)
 
     // SSE（redux + hook）
-    const MessageCallback = (e, updateId: string) => {
+    const MessageCallback = (e: any, updateId: string) => {
         const data = JSON.parse(e?.data)
             const content = data.content
 
@@ -86,6 +91,7 @@ const Content = () => {
             }else if(content !== ""){
                 startTransition(() => {
                     dispatch(pushContent({content, id: updateId}))
+                    console.log(1)
                 })
                 newMessage.current += content
             } else {
@@ -129,7 +135,11 @@ const Content = () => {
             id
         }
         try {
-            submitData(data)
+            submitData({
+                ...data,
+                name: data.name || "新对话",
+                id: data.id || ""
+            })
         } catch(err) {
             console.error("上传失败", err)
         }

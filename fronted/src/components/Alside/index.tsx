@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { toggleMessage } from '../../store/slices/Message'
 import { addNewChat, cancelNewChat, initHistoryList } from '../../store/slices/History'
 import useResend from '../../hooks/useResend'
+import type { History } from '../../store/slices/History'
 
 
 const Alside = () => {
@@ -90,7 +91,6 @@ const Alside = () => {
         if(!id) return
         try {
             const data = await excute(id)
-            console.log(data)
             // 如果开启新对话，但未聊天并回到历史聊天
             if(name === "新对话" && historyList[0].name === "新对话" && historyList[0].id === "") {
                 dispatch(cancelNewChat())
@@ -118,7 +118,7 @@ const Alside = () => {
             >
                 <VirtualList isEqualHeight containerRef={itemListRef}>
                     {
-                        historyList?.map(item => <Item
+                        historyList?.map((item: History) => <Item
                             selected={item.id === id} 
                             id={item.id}
                             content={item.name}

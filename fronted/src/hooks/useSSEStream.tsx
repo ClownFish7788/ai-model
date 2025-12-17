@@ -1,3 +1,4 @@
+import { fetchEventSource } from "@microsoft/fetch-event-source"
 import { useCallback, useEffect, useRef } from "react"
 
 interface UseSSEStreamProps {
@@ -9,16 +10,16 @@ interface UseSSEStreamProps {
 
 const useSSEStream = ({ id, MessageCallback, DoneCallback, isPending }: UseSSEStreamProps) => {
     const streamMap = useRef<Map<string, EventSource>>(new Map())
+    const controllersMap = useRef<Map<string, AbortController>>(new Map())
     const callbackRef = useRef({ MessageCallback, DoneCallback })
     const prevIsPending = useRef(false) //记录isPending
     const prevId = useRef<null | string>(null)
     const activeId = useRef<string>("")
     // 关闭联系
     const closeConnection = useCallback((id: string) => {
-        if(!streamMap.current.has(id)) return
-        const es = streamMap.current.get(id)
-        if(es) es.close()
-        streamMap.current.delete(id)
+        if(!controllersMap.current.has(id)) return
+        const ctrl = controllersMap.current.get(id)
+        ctrl?.abort()
     }, [])
 
     // 改变 id callbackRef
@@ -26,28 +27,66 @@ const useSSEStream = ({ id, MessageCallback, DoneCallback, isPending }: UseSSESt
         activeId.current = id
         callbackRef.current = { MessageCallback, DoneCallback }
     }, [id, MessageCallback, DoneCallback])
-    
+
     useEffect(() => {
-        const streams = streamMap.current
-        if(streams.has(id)) return
-        const eventSource = new EventSource(`http://localhost:3001/sse?conversationId=${id}`)
-        const handleMessage = (e) => {
-            callbackRef.current.MessageCallback(e, id)
+        const controllers = controllersMap.current
+        if(controllers.has(id)) return
+
+        const startConnection = async (id: string, reTryTime = 5) => {
+            if(controllersMap.current.has(id) || !id || reTryTime === 0) return
+            const conMap = controllersMap.current
+            const ctrl = new AbortController()
+            conMap.set(id, ctrl)
+            await fetchEventSource(`http://localhost:3001/sse?conversationId=${id}`, {
+                method: "GET",
+                headers: {
+                    "content-Type": "text/event-stream"
+                },
+                signal: ctrl.signal,
+                async onopen(response) {
+                    if(response.ok && response.headers.get('content-type')?.includes('text/event-stream')) return 
+                    if(response.status >= 400 && response.status < 500) {
+                        alert("您未登录或权限不足")
+                        throw new Error("您未登录或权限不足")
+                    } else if(response.status >= 500) {
+                        alert("服务器错误")
+                        throw new Error("服务器错误")
+                    }
+                },
+                onmessage(e) {
+                    if(e.event === "done") {
+                        callbackRef.current.DoneCallback(id)
+                        if(id !== prevId.current) {
+                            closeConnection(id)
+                        }
+                    } else {
+                        callbackRef.current.MessageCallback(e, id)
+                    }
+                },
+                onerror(err) {
+                    const status = err.status
+                    console.error("错误信息:", err.message)
+                    if(status === 401 && status === 403) {
+                        alert("您未登录或权限不足")
+                        throw new Error("您未登录或权限不足")
+                    } else if(status >= 500) {
+                        alert("服务器错误")
+                        throw new Error("服务器错误")
+                    }
+                    setTimeout(() => {
+                        startConnection(id, reTryTime - 1)
+                        console.log()
+                    }, 1000)
+                    throw new Error(err.message)
+                },
+            })
         }
-        const handleDone = () => {
-            callbackRef.current.DoneCallback(id)
-            if(id !== activeId.current) {
-                closeConnection(id)
-            }
-        }
-        eventSource.addEventListener('message', handleMessage)
-        eventSource.addEventListener('done', handleDone)
-        streams.set(id, eventSource)
+        startConnection(id)
 
         return () => {
             const preId = prevId?.current || ""
             const preIsPending = prevIsPending.current
-            if(!preIsPending && streams.has(preId!)) {
+            if(!preIsPending && controllers.has(preId!)) {
                 closeConnection(preId)
             }
         }
