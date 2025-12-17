@@ -84,25 +84,24 @@ const Content = () => {
     // SSE（redux + hook）
     const MessageCallback = (e: any, updateId: string) => {
         const data = JSON.parse(e?.data)
-            const content = data.content
-
-            if(content === '' && newMessage.current !== "") {
-                newMessage.current = ""
-            }else if(content !== ""){
-                startTransition(() => {
-                    dispatch(pushContent({content, id: updateId}))
-                    console.log(1)
-                })
-                newMessage.current += content
-            } else {
-                startTransition(() => {
-                    dispatch(addMessage({
-                        role: "system",
-                        content: "",
-                        id: uuidv4()
-                    }))
-                })
-            }
+        const content = data.content
+        if(content === undefined) return
+        if(content === '' && newMessage.current !== "") {
+            newMessage.current = ""
+        }else if(content !== ""){
+            startTransition(() => {
+                dispatch(pushContent({content, id: updateId}))
+            })
+            newMessage.current += content
+        } else {
+            startTransition(() => {
+                dispatch(addMessage({
+                    role: "system",
+                    content: "",
+                    id: uuidv4()
+                }))
+            })
+        }
     }
     const DoneCallback = useCallback((doneId: string) => {
         dispatch(toggleIsPending(false))
