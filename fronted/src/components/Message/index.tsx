@@ -1,4 +1,5 @@
 import styles from './Message.module.scss'
+import React from 'react'
 
 type Props = {
     content: string
@@ -12,4 +13,4 @@ const Message = ({content}: Props) => {
     )
 }
 
-export default Message
+export default React.memo(Message)

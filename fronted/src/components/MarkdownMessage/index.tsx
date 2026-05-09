@@ -1,6 +1,7 @@
 import Markdown from 'react-markdown'
 import styles from './MarkdownMessage.module.scss'
 import CodeBlock from '../CodeBlock'
+import React from 'react'
 
 type Props = {
     content: string
@@ -29,4 +30,4 @@ const MarkdownMessage = ({content}: Props) => {
     )
 }
 
-export default MarkdownMessage
+export default React.memo(MarkdownMessage)

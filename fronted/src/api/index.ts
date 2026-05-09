@@ -1,14 +1,14 @@
 import { type Msg } from '../store/slices/Message'
 const BASE_URL = 'http://localhost:3001'
 
-interface SumbitData  {
+interface SubmitData  {
     message: Msg[],
     name: string,
     time: string,
     id: string
 }
 
-const submitData = async (data: SumbitData) => {
+const submitData = async (data: SubmitData) => {
     const resp = await fetch(`${BASE_URL}/api/history`, {
         method: 'POST',
         headers: {
@@ -16,6 +16,11 @@ const submitData = async (data: SumbitData) => {
         },
         body: JSON.stringify(data)
     })
+    
+    if (!resp.ok) {
+        throw new Error(`提交失败: ${resp.statusText}`)
+    }
+    
     return resp
 }
 

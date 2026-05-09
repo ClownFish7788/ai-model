@@ -36,31 +36,48 @@ export const updateOldChat = createAsyncThunk<
     void, //返回类型
     string, //参数类型
     { state: RootState, rejectValue: string }
->('Message/updateOldChat', (updateId, thunkAPI) => {
-    const state = thunkAPI.getState().message
-    const { dispatch, rejectWithValue } = thunkAPI
+>('Message/updateOldChat', async (updateId, thunkAPI) => {
+    const { getState, dispatch, rejectWithValue } = thunkAPI
+    const state = getState().message
     const { id, oldChat } = state
-    const messages = []
+    let messages: Msg[] = []
+    
+    // 获取要上传的消息列表
     if(id === updateId) {
-        messages.push(...state.msgList)
-    } else if(oldChat.some(item => item.id === updateId)) {
-        const oldChatList = oldChat.filter(item => item.id === updateId)
-        messages.push(...oldChatList[0].msgList)
-    } else return
-    // 网络提交
+        messages = [...state.msgList]
+    } else {
+        const oldChatItem = oldChat.find(item => item.id === updateId)
+        if(oldChatItem) {
+            messages = [...oldChatItem.msgList]
+        } else {
+            return
+        }
+    }
+    
+    // 确保有消息才上传
+    if (messages.length === 0) {
+        return
+    }
+    
     try {
-        submitData({
+        // 准备上传数据
+        const uploadData = {
             message: messages,
-            name: messages[messages.length - 1].content.slice(0, 5),
+            name: messages[messages.length - 1].content.slice(0, 10) + (messages[messages.length - 1].content.length > 10 ? "..." : ""),
             time: Date.now().toString(),
             id: updateId
-        })
+        }
+        
+        // 发送请求
+        await submitData(uploadData)
+        
+        // 如果是旧聊天，删除它
+        if(oldChat.some(item => item.id === updateId)) {
+            dispatch(deleteOldChat(updateId))
+        }
     } catch (err) {
-        rejectWithValue(err as string)
-        console.error("上传失败", err)
-    }
-    if(oldChat.some(item => item.id === updateId)) {
-        dispatch(deleteOldChat(updateId))
+        console.error("聊天记录上传失败:", err)
+        return rejectWithValue(err instanceof Error ? err.message : "上传失败")
     }
 })
 

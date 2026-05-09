@@ -6,12 +6,11 @@ import styles from './content.module.scss'
 import { addMessage, assignChatId, changeChatName, pushContent, toggleIsPending, updateOldChat } from '../../store/slices/Message'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { v4 as uuidv4 } from 'uuid'
-import { type Msg } from '../../store/slices/Message'
 import useAuthScroll from '../../hooks/useAuthScroll'
 import { assignNewChat } from '../../store/slices/History'
-import VirtualList from '../VirtualList'
 import { submitData } from '../../api'
 import useSSEStream from '../../hooks/useSSEStream'
+import { VirtualList } from '../VirtualList/VirtualList'
 
 const Content = () => {
     // 会话ID
@@ -144,17 +143,16 @@ const Content = () => {
         }
     }, [isPending, msgList, id, name])
 
+    // item转为ReactNode
+    const itemToRender = useCallback((item:any, index: number) => {
+        if(item.role === 'user') return <Message content={item.content} key={item.id} />
+        return <MarkdownMessage content={item.content} key={item.id} />
+    }, [])
+
     return (
         <div className={styles.content}>
             <div className={styles.messages} ref={msgContainer}>
-                <VirtualList isEqualHeight={false} containerRef={msgContainer}>
-                    {
-                        defferedMd.map((item: Msg) => {
-                            if(item.role === "user") return <Message content={item.content} key={item.id} />
-                            return <MarkdownMessage content={item.content} key={item.id} />
-                        })
-                    }
-                </VirtualList>
+                <VirtualList items={defferedMd} itemToRender={itemToRender} isEqualHeight={false} gap={100} estimateHeight={200} />
             </div>
             <div className={styles.inputBar}>
                 <Input sendMsg={sendMessage} />
