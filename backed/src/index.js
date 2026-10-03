@@ -9,8 +9,8 @@ const app = express()
 const port = 3001
 
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || 'sk-649935490cde4692b3a5694226dcd6cf',
-    baseURL: process.env.OPENAI_BASE_URL || "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL
 })
 
 const sseClients = new Map()

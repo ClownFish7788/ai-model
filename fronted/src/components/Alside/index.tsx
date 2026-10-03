@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import Button from '../Button'
 import Item from '../Item'
 import styles from './Alside.module.scss'
-import VirtualList from '../VirtualList'
+import { VirtualList } from '../VirtualList/VirtualList'
 import { useAppDispatch, useAppSelector } from '../../store/hooks'
 import { toggleMessage } from '../../store/slices/Message'
 import { addNewChat, cancelNewChat, initHistoryList } from '../../store/slices/History'
@@ -101,6 +101,18 @@ const Alside = () => {
         }
     }
 
+    const itemToRender = (item: History) => {
+        return (
+            <Item
+                selected={item.id === id} 
+                id={item.id}
+                content={item.name}
+                key={item.id}
+                handleClick={getMessageId}
+            />
+        )
+    }
+
     return (
         <div className={styles.Alside}>
             <header className={styles.header}>
@@ -116,17 +128,7 @@ const Alside = () => {
                 ref={itemListRef}
                 className={`${styles.itemList} ${isScrolling ? styles.scrolling : ''}`}
             >
-                <VirtualList isEqualHeight containerRef={itemListRef}>
-                    {
-                        historyList?.map((item: History) => <Item
-                            selected={item.id === id} 
-                            id={item.id}
-                            content={item.name}
-                            key={item.id}
-                            handleClick={getMessageId}
-                        />)
-                    }
-                </VirtualList>
+                <VirtualList itemToRender={itemToRender} items={historyList} />
             </div>
             <footer className={styles.footer}>
 

@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useDeferredValue, useEffect, useRef } from 'react'
+import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from 'react'
 import Input from '../Input'
 import MarkdownMessage from '../MarkdownMessage'
 import Message from '../Message'
@@ -11,6 +11,7 @@ import { assignNewChat } from '../../store/slices/History'
 import { submitData } from '../../api'
 import useSSEStream from '../../hooks/useSSEStream'
 import { VirtualList } from '../VirtualList/VirtualList'
+import { FullList } from '../FullList'
 
 const Content = () => {
     // 会话ID
@@ -22,6 +23,7 @@ const Content = () => {
     const defferedMd = useDeferredValue(msgList)
     const message = useRef("")
     const msgContainer = useRef<null | HTMLDivElement>(null)
+    const [showFullList, setShowFullList] = useState(false)
     // 发送消息
     const sendMessage = async (msg: string) => {
         if(!conversationId.current) {
@@ -144,15 +146,32 @@ const Content = () => {
     }, [isPending, msgList, id, name])
 
     // item转为ReactNode
-    const itemToRender = useCallback((item:any, index: number) => {
+    const itemToRender = useCallback((item:any) => {
         if(item.role === 'user') return <Message content={item.content} key={item.id} />
         return <MarkdownMessage content={item.content} key={item.id} />
     }, [])
 
     return (
         <div className={styles.content}>
+            <button
+                className={styles.viewSwitch}
+                type="button"
+                role="switch"
+                aria-checked={showFullList}
+                onClick={() => setShowFullList(prev => !prev)}
+                title={showFullList ? "切换到虚拟列表" : "切换到全量列表"}
+            >
+                <span>{showFullList ? "全量列表" : "虚拟列表"}</span>
+                <span className={styles.switchTrack} aria-hidden="true">
+                    <span className={styles.switchThumb} />
+                </span>
+            </button>
             <div className={styles.messages} ref={msgContainer}>
-                <VirtualList items={defferedMd} itemToRender={itemToRender} isEqualHeight={false} gap={100} estimateHeight={200} />
+                {showFullList ? (
+                    <FullList items={defferedMd} itemToRender={itemToRender} />
+                ) : (
+                    <VirtualList items={defferedMd} itemToRender={itemToRender} isEqualHeight={false} gap={100} estimateHeight={200} />
+                )}
             </div>
             <div className={styles.inputBar}>
                 <Input sendMsg={sendMessage} />

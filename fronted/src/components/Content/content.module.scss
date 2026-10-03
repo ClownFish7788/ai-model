@@ -7,6 +7,66 @@
     min-height: 0;
     position: relative;
     padding-top: 50px;
+    .viewSwitch {
+        position: absolute;
+        top: 16px;
+        right: 32px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 0;
+        padding: 4px 0;
+        color: #666;
+        background: transparent;
+        font: inherit;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid #7a9bd1;
+            outline-offset: 4px;
+            border-radius: 4px;
+        }
+
+        &[aria-checked="true"] {
+            color: #333;
+
+            .switchTrack {
+                background-color: #7a9bd1;
+            }
+
+            .switchThumb {
+                transform: translateX(16px);
+            }
+        }
+    }
+
+    .switchTrack {
+        display: inline-flex;
+        align-items: center;
+        width: 32px;
+        height: 18px;
+        padding: 2px;
+        border-radius: 999px;
+        background-color: #bdbdbd;
+        transition: background-color 0.2s ease;
+    }
+
+    .switchThumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+        transition: transform 0.2s ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .switchTrack,
+        .switchThumb {
+            transition: none;
+        }
+    }
+
     .messages {
         display: flex;
         flex-direction: column;

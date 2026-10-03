@@ -1,7 +1,7 @@
 .message {
-    margin-left: auto;
-    right: 0;
-    position: absolute;
+    display: flex;
+    justify-content: flex-end;
+
     .content {
         background-color: #e4edfd;
         line-height: 1.5;
